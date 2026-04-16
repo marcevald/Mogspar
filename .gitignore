@@ -1,0 +1,20 @@
+# Secrets — never commit these
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.db
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

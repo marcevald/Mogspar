@@ -1,0 +1,68 @@
+services:
+
+  # --------------------------------------------------------------------------
+  # Backend — FastAPI / uvicorn (production, no hot-reload)
+  # --------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: mogspar_backend
+    volumes:
+      - mogspar_db:/app/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # nginx — reverse proxy + SSL termination + frontend static files
+  # --------------------------------------------------------------------------
+  nginx:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: mogspar_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - certbot_certs:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # Certbot — obtains and renews Let's Encrypt TLS certificates
+  #
+  # First run: use the init-certs.sh script (see below).
+  # After that, this service auto-renews every 12 hours.
+  # --------------------------------------------------------------------------
+  certbot:
+    image: certbot/certbot
+    container_name: mogspar_certbot
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    # Renew twice a day; Let's Encrypt only issues a new cert when <30 days remain
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
+    restart: unless-stopped
+
+volumes:
+  mogspar_db:
+  # These volumes were created manually during cert issuance — declare as external
+  # so Compose doesn't try to recreate them and lose the certificates.
+  certbot_certs:
+    external: true
+    name: mogspar_certbot_certs
+  certbot_www:
+    external: true
+    name: mogspar_certbot_www

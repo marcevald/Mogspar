@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Møgspar — UI Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --accent:#1D9E75;--accent-dark:#085041;--accent-bg:#EAF3DE;--accent-text:#3B6D11;
+  --amber:#BA7517;--amber-bg:#FAEEDA;--amber-text:#854F0B;
+  --red-bg:#FCEBEB;--red-text:#A32D2D;
+  --gray-bg:#F1EFE8;--gray-text:#5F5E5A;
+  --info-bg:#E6F1FB;--info-text:#185FA5;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --accent:#5DCAA5;--accent-dark:#9FE1CB;--accent-bg:#085041;--accent-text:#9FE1CB;
+    --amber:#EF9F27;--amber-bg:#633806;--amber-text:#FAC775;
+    --red-bg:#501313;--red-text:#F09595;
+    --gray-bg:#2C2C2A;--gray-text:#B4B2A9;
+    --info-bg:#042C53;--info-text:#85B7EB;
+  }
+}
+
+body{
+  font-family:'DM Sans',var(--font-sans,sans-serif);
+  background:var(--color-background-tertiary,#f5f5f3);
+  color:var(--color-text-primary,#1a1a18);
+  min-height:100vh;padding:24px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+}
+
+/* Nav bar */
+.mnav{
+  display:flex;align-items:center;gap:10px;
+  width:100%;max-width:440px;
+  background:var(--color-background-primary,#fff);
+  border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.15));
+  border-radius:var(--border-radius-lg,12px);
+  padding:10px 14px;
+}
+.nbtn{
+  width:34px;height:34px;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,.25));
+  border-radius:var(--border-radius-md,8px);
+  background:var(--color-background-secondary,#f0f0ee);
+  color:var(--color-text-primary,#1a1a18);
+  cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:opacity .15s;
+}
+.nbtn:disabled{opacity:.3;cursor:default}
+.ninfo{flex:1;text-align:center}
+.nname{font-size:13px;font-weight:500;color:var(--color-text-primary,#1a1a18);display:block}
+.ncnt{font-size:11px;color:var(--color-text-secondary,#666)}
+
+/* Phone */
+.phone{
+  width:390px;height:760px;
+  background:var(--color-background-primary,#fff);
+  border:0.5px solid var(--color-border-secondary,rgba(0,0,0,.25));
+  border-radius:40px;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.pscroll{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;display:flex;flex-direction:column}
+.pscroll::-webkit-scrollbar{display:none}
+
+/* Status bar */
+.sbar{
+  padding:12px 24px 4px;display:flex;justify-content:space-between;
+  font-size:11px;font-weight:500;color:var(--color-text-secondary,#666);flex-shrink:0;
+}
+
+/* App header */
+.ahead{
+  padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--color-background-primary,#fff);flex-shrink:0;
+}
+.atitle{font-size:17px;font-weight:500;color:var(--color-text-primary,#1a1a18)}
+.asub{font-size:11px;color:var(--color-text-secondary,#666);margin-top:2px}
+
+/* Content bg */
+.cont{flex:1;padding:14px;background:var(--color-background-tertiary,#f5f5f3);overflow-y:auto}
+
+/* Avatar */
+.av{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--accent);color:#fff;
+  font-size:13px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+/* Cards */
+.card{
+  background:var(--color-background-primary,#fff);
+  border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+  border-radius:var(--border-radius-lg,12px);
+  padding:14px;margin-bottom:10px;
+}
+.csect{
+  background:var(--color-background-primary,#fff);
+  border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+  border-radius:var(--border-radius-lg,12px);
+  overflow:hidden;margin-bottom:12px;
+}
+
+/* Section label */
+.slbl{
+  font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--color-text-secondary,#666);margin:14px 0 7px;
+}
+
+/* Badges */
+.bdg{font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px}
+.bl{background:var(--accent-bg);color:var(--accent-text)}
+.bo{background:var(--amber-bg);color:var(--amber-text)}
+.bg{background:var(--gray-bg);color:var(--gray-text)}
+.br{background:var(--red-bg);color:var(--red-text)}
+
+/* Buttons */
+.btnp{
+  background:var(--accent);color:#fff;border:none;
+  border-radius:var(--border-radius-md,8px);padding:12px 20px;
+  font-size:14px;font-weight:500;font-family:inherit;
+  cursor:pointer;width:100%;
+}
+.btns{
+  background:var(--color-background-primary,#fff);
+  color:var(--color-text-primary,#1a1a18);
+  border:0.5px solid var(--color-border-secondary,rgba(0,0,0,.25));
+  border-radius:var(--border-radius-md,8px);padding:9px 14px;
+  font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;
+}
+.btnam{
+  background:var(--amber);color:#fff;border:none;
+  border-radius:var(--border-radius-md,8px);padding:12px 20px;
+  font-size:14px;font-weight:500;font-family:inherit;
+  cursor:pointer;width:100%;
+}
+
+/* Tabs */
+.tabs{
+  display:flex;gap:0;background:var(--color-background-secondary,#ebebea);
+  border-radius:var(--border-radius-md,8px);padding:3px;margin-bottom:18px;
+}
+.tab{
+  flex:1;padding:8px;border:none;background:transparent;
+  border-radius:6px;font-size:13px;font-weight:500;font-family:inherit;
+  color:var(--color-text-secondary,#666);cursor:pointer;
+}
+.tab.on{
+  background:var(--color-background-primary,#fff);
+  color:var(--color-text-primary,#1a1a18);
+  border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+}
+
+/* Field */
+.fld{margin-bottom:12px}
+.fld label{display:block;font-size:11px;font-weight:500;color:var(--color-text-secondary,#666);margin-bottom:5px}
+.fld input{
+  width:100%;background:var(--color-background-secondary,#f0f0ee);
+  border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+  border-radius:var(--border-radius-md,8px);padding:11px 13px;
+  font-size:14px;font-family:inherit;color:var(--color-text-primary,#1a1a18);outline:none;
+}
+
+/* Player row */
+.prow{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 14px;
+  border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+}
+.prow:last-child{border-bottom:none}
+.seat{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--accent);color:#fff;
+  font-size:11px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.seat.empty{background:var(--color-background-secondary,#f0f0ee);color:var(--color-text-secondary,#666);border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1))}
+
+/* Bottom nav */
+.bnav{
+  display:flex;border-top:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+  background:var(--color-background-primary,#fff);padding:6px 0 12px;flex-shrink:0;
+}
+.nit{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:10px;font-weight:500;color:var(--color-text-secondary,#666);cursor:pointer;padding:4px;
+}
+.nit.on{color:var(--accent)}
+.nico{font-size:17px;line-height:1.2}
+
+/* Code block */
+.cblk{
+  background:var(--color-background-secondary,#f0f0ee);
+  border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+  border-radius:var(--border-radius-lg,12px);
+  padding:18px;text-align:center;margin-bottom:12px;
+}
+.clbl{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-secondary,#666);margin-bottom:8px}
+.cval{font-family:'Lora',serif;font-size:30px;font-weight:500;letter-spacing:8px;color:var(--color-text-primary,#1a1a18)}
+
+/* Round bar */
+.rbar{
+  background:var(--color-background-primary,#fff);
+  border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+  border-radius:var(--border-radius-lg,12px);
+  padding:13px 14px;display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:12px;
+}
+
+/* Bid rows */
+.brow{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 14px;
+  border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+}
+.brow:last-child{border-bottom:none}
+.brow.active{background:var(--accent-bg)}
+.brow.fbd{background:var(--red-bg)}
+.bconf{
+  width:44px;height:30px;border-radius:var(--border-radius-md,8px);
+  background:var(--accent-bg);border:0.5px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:500;color:var(--accent-text);
+}
+.fpill{
+  font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px;
+  background:var(--red-bg);color:var(--red-text);
+  border:0.5px solid var(--red-text);white-space:nowrap;
+}
+
+/* Stepper */
+.stpr{display:flex;align-items:center;gap:6px}
+.sbtn{
+  width:28px;height:28px;
+  border:0.5px solid var(--color-border-secondary,rgba(0,0,0,.25));
+  border-radius:var(--border-radius-md,8px);
+  background:var(--color-background-primary,#fff);
+  color:var(--color-text-primary,#1a1a18);
+  font-size:16px;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;
+}
+.sval{width:30px;text-align:center;font-size:15px;font-weight:500}
+
+/* Score table */
+.stable{border-collapse:collapse;width:100%;font-size:12px}
+.stable th,.stable td{padding:8px 6px;text-align:center;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1))}
+.stable th{font-size:11px;font-weight:500;color:var(--color-text-secondary,#666);background:var(--color-background-secondary,#f0f0ee)}
+.stable tr:last-child td{border-bottom:none}
+.tex{color:var(--accent-text);font-weight:500}
+.twr{color:var(--red-text)}
+.tcur{color:var(--amber-text)}
+.trow td{background:var(--color-background-secondary,#f0f0ee);font-weight:500}
+
+/* Alert */
+.alt{border-radius:var(--border-radius-md,8px);padding:10px 12px;font-size:12px;margin-bottom:10px}
+.altw{background:var(--amber-bg);color:var(--amber-text);border:0.5px solid var(--amber)}
+.alto{background:var(--accent-bg);color:var(--accent-text);border:0.5px solid var(--accent)}
+.alti{background:var(--info-bg);color:var(--info-text);border:0.5px solid var(--info-text)}
+
+/* Metrics */
+.mgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.met{background:var(--color-background-secondary,#f0f0ee);border-radius:var(--border-radius-md,8px);padding:12px 8px;text-align:center}
+.mval{font-family:'Lora',serif;font-size:22px;font-weight:500;color:var(--color-text-primary,#1a1a18)}
+.mlbl{font-size:10px;color:var(--color-text-secondary,#666);margin-top:3px}
+
+/* Stat row */
+.strow{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));
+}
+.strow:last-child{border-bottom:none}
+.rnk{font-family:'Lora',serif;font-size:16px;font-weight:500;width:20px;text-align:center;color:var(--color-text-secondary,#666);flex-shrink:0}
+.rnk.r1{color:#BA7517}.rnk.r2{color:#888780}.rnk.r3{color:#C47D3A}
+
+/* Logo screen */
+.logo-area{text-align:center;padding:36px 24px 28px}
+.logo-sp{font-size:42px;color:var(--color-text-primary,#1a1a18);display:block;margin-bottom:8px}
+.logo-nm{font-family:'Lora',serif;font-size:32px;font-weight:500;color:var(--color-text-primary,#1a1a18);letter-spacing:-0.5px}
+.logo-tg{font-size:12px;color:var(--color-text-secondary,#666);margin-top:5px}
+
+/* Score game card extras */
+.gctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.gccode{font-family:'Lora',serif;font-size:18px;font-weight:500;color:var(--color-text-primary,#1a1a18);letter-spacing:1px}
+.gcmeta{font-size:11px;color:var(--color-text-secondary,#666);display:flex;gap:10px;margin-top:3px}
+.gcfoot{font-size:11px;color:var(--color-text-secondary,#666);margin-top:2px}
+
+/* Flex utils */
+.row{display:flex;gap:8px}
+.row .btnp,.row .btns{flex:1}
+.gap8{height:8px}.gap12{height:12px}.gap16{height:16px}
+.tc{text-align:center}
+.txt-s{font-size:12px;color:var(--color-text-secondary,#666)}
+.txt-lnk{font-size:13px;font-weight:500;color:var(--accent);cursor:pointer}
+</style>
+
+<div style="text-align:center">
+  <div style="font-family:'Lora',serif;font-size:26px;font-weight:500;color:var(--color-text-primary,#1a1a18)">&#9824; Møgspar</div>
+  <div style="font-size:12px;color:var(--color-text-secondary,#666);margin-top:4px">UI mockups — use arrows to browse all screens</div>
+</div>
+
+<div class="mnav">
+  <button class="nbtn" id="pb" onclick="ps()">&#8592;</button>
+  <div class="ninfo">
+    <span class="nname" id="sn"></span>
+    <span class="ncnt" id="sc"></span>
+  </div>
+  <button class="nbtn" id="nb" onclick="ns()">&#8594;</button>
+</div>
+
+<div class="phone">
+  <div class="pscroll" id="ph"></div>
+</div>
+
+<script>
+const S=[
+/* 0 — Login */
+{name:'1. Login / register',html:`
+<div class="sbar"><span>9:41</span><span>&#9646;&#9646;&#9646;</span></div>
+<div class="pscroll" style="flex:1;overflow-y:auto">
+<div style="padding:0 24px 32px">
+<div class="logo-area">
+  <span class="logo-sp">&#9824;</span>
+  <div class="logo-nm">Møgspar</div>
+  <div class="logo-tg">The trick-taking game</div>
+</div>
+<div class="tabs">
+  <button class="tab on">Sign in</button>
+  <button class="tab">Register</button>
+</div>
+<div class="fld"><label>Email</label><input type="email" value="mikkel@example.dk" readonly></div>
+<div class="fld"><label>Password</label><input type="password" value="••••••••" readonly></div>
+<div class="gap16"></div>
+<button class="btnp" onclick="go(1)">Sign in</button>
+<div class="gap12"></div>
+<div class="tc txt-s">No account? <span class="txt-lnk">Create one</span></div>
+<div class="gap8"></div>
+<div class="tc txt-s"><span class="txt-lnk">Forgot password?</span></div>
+</div>
+</div>
+`},
+
+/* 1 — Home */
+{name:'2. Home',html:`
+<div class="sbar"><span>9:41</span><span>&#9646;&#9646;&#9646;</span></div>
+<div class="ahead">
+  <div><div class="atitle">&#9824; Møgspar</div><div class="asub">Good evening, Mikkel</div></div>
+  <div class="av">M</div>
+</div>
+<div class="cont" style="padding-bottom:0">
+
+<div class="card" style="padding:12px">
+  <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary,#666);margin-bottom:9px">Join a game by code</div>
+  <div style="display:flex;gap:8px">
+    <input style="flex:1;background:var(--color-background-secondary,#f0f0ee);border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));border-radius:var(--border-radius-md,8px);padding:10px 13px;font-size:15px;font-family:inherit;color:var(--color-text-primary,#1a1a18);letter-spacing:3px;outline:none" placeholder="ABC-12" readonly>
+    <button class="btns" onclick="go(3)">Join</button>
+  </div>
+</div>
+
+<div class="slbl">Active games</div>
+<div class="card" onclick="go(4)" style="cursor:pointer">
+  <div class="gctop">
+    <div><div class="gccode">MØG-41</div><div class="gcmeta"><span>4 players</span><span>Round 7 of 26</span></div></div>
+    <span class="bdg bl">&#9679; Live</span>
+  </div>
+  <div class="gcfoot">Game master: Anders &nbsp;·&nbsp; 7 cards dealt this round</div>
+</div>
+<div class="card">
+  <div class="gctop">
+    <div><div class="gccode">MØG-38</div><div class="gcmeta"><span>3 players</span><span>Waiting to start</span></div></div>
+    <span class="bdg bo">Lobby</span>
+  </div>
+  <div class="gcfoot">Game master: Mikkel (you)</div>
+</div>
+
+<div class="slbl">Past games</div>
+<div class="card">
+  <div class="gctop">
+    <div><div class="gccode">MØG-35</div><div class="gcmeta"><span>5 players</span><span>26 rounds</span></div></div>
+    <span class="bdg bg">Finished</span>
+  </div>
+  <div class="gcfoot">Your score: <strong style="color:var(--accent-text)">142 pts</strong> &nbsp;·&nbsp; 2nd place &nbsp;·&nbsp; 3 days ago</div>
+</div>
+
+<div class="gap12"></div>
+<button class="btnp" onclick="go(2)">+ Create new game</button>
+<div class="gap12"></div>
+</div>
+<div class="bnav">
+  <div class="nit on"><div class="nico">&#8962;</div>Home</div>
+  <div class="nit"><div class="nico">&#9783;</div>Stats</div>
+  <div class="nit"><div class="nico">&#9711;</div>Profile</div>
+</div>
+`},
+
+/* 2 — Create game */
+{name:'3. Create game',html:`
+<div class="sbar"><span>9:41</span><span>&#9646;&#9646;&#9646;</span></div>
+<div class="ahead">
+  <div><div class="atitle">New game</div><div class="asub">You will be game master</div></div>
+</div>
+<div class="cont">
+
+<div class="slbl">Your name in this game</div>
+<div class="fld"><label>Display name</label><input value="Mikkel" readonly></div>
+
+<div class="slbl">Players</div>
+<div class="alt alti">You can add players before the game, or they can join using the game code after it is created.</div>
+
+<div class="csect">
+<div class="prow">
+  <div class="seat">1</div>
+  <div style="flex:1;font-size:14px">Mikkel <span style="font-size:11px;color:var(--color-text-secondary,#666)">(you · GM)</span></div>
+</div>
+<div class="prow" style="cursor:pointer">
+  <div class="seat empty">2</div>
+  <div style="flex:1;font-size:13px;color:var(--color-text-secondary,#666);font-style:italic">+ Add player or leave for them to join</div>
+</div>
+<div class="prow" style="cursor:pointer">
+  <div class="seat empty">3</div>
+  <div style="flex:1;font-size:13px;color:var(--color-text-secondary,#666);font-style:italic">+ Add player or leave for them to join</div>
+</div>
+</div>
+
+<div class="alt alti" style="margin-top:4px">Møgspar supports 2–8 players. The number of cards dealt per round is set automatically based on player count.</div>
+
+<div class="gap12"></div>
+<button class="btnam" onclick="go(3)">Create game &amp; get code</button>
+</div>
+`},
+
+/* 3 — Lobby GM */
+{name:'4. Game lobby (game master view)',html:`
+<div class="sbar"><span>9:41</span><span>&#9646;&#9646;&#9646;</span></div>
+<div class="ahead">
+  <div><div class="atitle">Game lobby</div><div class="asub">MØG-47 &nbsp;·&nbsp; You are game master</div></div>
+  <span class="bdg bo">Lobby</span>
+</div>
+<div class="cont">
+
+<div class="cblk">
+  <div class="clbl">Share this code with your friends</div>
+  <div class="cval">MØG-47</div>
+  <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
+    <button class="btns">Copy link</button>
+    <button class="btns">Share</button>
+  </div>
+</div>
+
+<div class="slbl">Players joined (3 of 6)</div>
+<div class="csect">
+<div class="prow">
+  <div class="av" style="width:22px;height:22px;font-size:11px">M</div>
+  <div style="flex:1"><span style="font-size:14px;font-weight:500">Mikkel</span> <span style="font-size:11px;color:var(--color-text-secondary,#666)">(you)</span></div>
+  <span style="font-size:11px;font-weight:500;color:var(--amber-text)">&#9819; GM</span>
+</div>
+<div class="prow">
+  <div class="av" style="width:22px;height:22px;font-size:11px;background:#378ADD">A</div>
+  <div style="flex:1;font-size:14px">Anders</div>
+  <span style="font-size:11px;color:var(--accent-text);font-weight:500">&#10003; Ready</span>
+</div>
+<div class="prow">
+  <div class="av" style="width:22px;height:22px;font-size:11px;background:#D85A30">L</div>
+  <div style="flex:1;font-size:14px">Louise</div>
+  <span style="font-size:11px;color:var(--accent-text);font-weight:500">&#10003; Ready</span>
+</div>
+<div class="prow" style="opacity:.45">
+  <div class="seat empty">4</div>
+  <div style="flex:1;font-size:13px;color:var(--color-text-secondary,#666);font-style:italic">Waiting for player...</div>
+</div>
+</div>
+
+<div class="txt-s tc" style="margin-bottom:12px">You can start with 2 or more players. Others can still join during the game.</div>
+<button class="btnp" onclick="go(4)" style="background:var(--amber)">&#9654; Start game</button>
+</div>
+<div class="bnav">
+  <div class="nit" onclick="go(4)"><div class="nico">&#9654;</div>Round</div>
+  <div class="nit" onclick="go(7)"><div class="nico">&#9783;</div>Scores</div>
+  <div class="nit on"><div class="nico">&#9432;</div>Game info</div>
+</div>
+`},
+
+/* 4 — Bidding GM */
+{name:'5. Bidding phase (game master view)',html:`
+<div class="sbar"><span>9:41</span><span>&#9646;&#9646;&#9646;</span></div>
+<div class="ahead">
+  <div><div class="atitle">Bidding phase</div><div class="asub">MØG-47 &nbsp;·&nbsp; Round 1 of 26</div></div>
+  <span class="bdg bl">&#9679; Live</span>
+</div>
+<div class="cont">
+
+<div class="rbar">
+  <div>
+    <div style="font-family:'Lora',serif;font-size:17px;font-weight:500">Round 1 — 13 cards</div>
+    <div style="font-size:11px;color:var(--color-text-secondary,#666);margin-top:3px">First to bid: Mikkel &nbsp;·&nbsp; &#9824; beats all suits</div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-family:'Lora',serif;font-size:20px;font-weight:500;color:var(--amber-text)">5 / 13</div>
+    <div style="font-size:10px;color:var(--color-text-secondary,#666)">bids / cards</div>
+  </div>
+</div>
+
+<div class="slbl">Enter bids in seat order</div>
+<div class="csect">
+  <div class="brow">
+    <div class="seat">1</div>
+    <div style="flex:1"><div style="font-size:14px">Mikkel <span style="font-size:11px;color:var(--color-text-secondary,#666)">(you)</span></div><div style="font-size:11px;color:var(--accent-text)">Confirmed</div></div>
+    <div class="bconf">3</div>
+  </div>
+  <div class="brow">
+    <div class="seat">2</div>
+    <div style="flex:1"><div style="font-size:14px">Anders</div><div style="font-size:11px;color:var(--accent-text)">Confirmed</div></div>
+    <div class="bconf">2</div>
+  </div>
+  <div class="brow active" style="flex-direction:column;align-items:stretch;gap:10px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="seat" style="background:var(--amber)">3</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:500">Louise</div><div style="font-size:11px;color:var(--amber-text)">&#9654; Entering now</div></div>
+      <div style="font-size:10px;color:var(--color-text-secondary,#666);text-align:right">Pre-filled<br><span style="color:var(--amber-text);font-weight:500">avg = 4</span></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:0">
+      <button class="sbtn" style="width:44px;height:44px;font-size:22px;border-radius:var(--border-radius-md,8px) 0 0 var(--border-radius-md,8px);border-right:none" onclick="bidAdj(this,-1)">&#8722;</button>
+      <div id="bidval" style="width:60px;height:44px;display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:26px;font-weight:500;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,.25));background:var(--color-background-primary,#fff)">4</div>
+      <button class="sbtn" style="width:44px;height:44px;font-size:22px;border-radius:0 var(--border-radius-md,8px) var(--border-radius-md,8px) 0;border-left:none" onclick="bidAdj(this,1)">+</button>
+    </div>
+  </div>
+  <div class="brow">
+    <div class="seat empty">4</div>
+    <div style="flex:1"><div style="font-size:14px;color:var(--color-text-secondary,#666)">Thomas</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">Last to bid</div></div>
+    <span class="fpill">&#8800; 5</span>
+  </div>
+</div>
+
+<div class="alt altw">
+  <strong>Last bidder rule:</strong> Thomas cannot bid <strong>5</strong> — that would make the total equal to the cards dealt. Any other value is allowed.
+</div>
+
+<button class="btnp" id="bidbtn">Confirm Louise's bid: 4 &#8594;</button>
+</div>
+<div class="bnav">
+  <div class="nit on"><div class="nico">&#9654;</div>Round</div>
+  <div class="nit" onclick="go(7)"><div class="nico">&#9783;</div>Scores</div>
+  <div class="nit" onclick="go(3)"><div class="nico">&#9432;</div>Game info</div>
+</div>
+`},
+
+/* 5 — Bidding player */
+{name:'6. Bidding phase (player view)',html:`
+<div class="sbar"><span>9:41</span><span>&#9646;&#9646;&#9646;</span></div>
+<div class="ahead">
+  <div><div class="atitle">Bidding phase</div><div class="asub">MØG-47 &nbsp;·&nbsp; Round 1 of 26</div></div>
+  <span class="bdg bl">&#9679; Live</span>
+</div>
+<div class="cont">
+
+<div class="rbar">
+  <div>
+    <div style="font-family:'Lora',serif;font-size:17px;font-weight:500">Round 1 — 13 cards</div>
+    <div style="font-size:11px;color:var(--color-text-secondary,#666);margin-top:3px">&#9824; beats all &nbsp;·&nbsp; First to bid: Mikkel</div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-family:'Lora',serif;font-size:20px;font-weight:500;color:var(--amber-text)">5 / 13</div>
+    <div style="font-size:10px;color:var(--color-text-secondary,#666)">bids / cards</div>
+  </div>
+</div>
+
+<div class="card" style="text-align:center;padding:18px 14px;margin-bottom:12px">
+  <div style="font-size:11px;color:var(--color-text-secondary,#666);margin-bottom:8px">Your bid this round</div>
+  <div style="font-family:'Lora',serif;font-size:40px;font-weight:500;color:var(--accent-text)">3</div>
+  <div style="font-size:11px;color:var(--color-text-secondary,#666);margin-top:4px">tricks</div>
+</div>
+
+<div class="slbl">All bids so far</div>
+<div class="csect">
+  <div class="brow">
+    <div class="seat">1</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:500">Mikkel <span style="font-size:11px;color:var(--color-text-secondary,#666)">(you)</span></div></div>
+    <div class="bconf">3</div>
+  </div>
+  <div class="brow">
+    <div class="seat">2</div>
+    <div style="flex:1;font-size:14px">Anders</div>
+    <div class="bconf">2</div>
+  </div>
+  <div class="brow active">
+    <div class="seat" style="background:var(--amber)">3</div>
+    <div style="flex:1;font-size:14px">Louise</div>
+    <div style="font-size:12px;color:var(--amber-text)">Thinking...</div>
+  </div>
+  <div class="brow">
+    <div class="seat empty">4</div>
+    <div style="flex:1;font-size:14px;color:var(--color-text-secondary,#666)">Thomas</div>
+    <div style="font-size:12px;color:var(--color-text-secondary,#666)">Waiting</div>
+  </div>
+</div>
+
+<div class="alt alti">Bids become visible to all players as the game master enters them.</div>
+</div>
+<div class="bnav">
+  <div class="nit on"><div class="nico">&#9654;</div>Round</div>
+  <div class="nit" onclick="go(7)"><div class="nico">&#9783;</div>Scores</div>
+  <div class="nit" onclick="go(3)"><div class="nico">&#9432;</div>Game info</div>
+</div>
+`},
+
+/* 6 — Trick entry */
+{name:'7. Trick entry (game master view)',html:`
+<div class="sbar"><span>9:41</span><span>&#9646;&#9646;&#9646;</span></div>
+<div class="ahead">
+  <div><div class="atitle">Enter tricks won</div><div class="asub">MØG-47 &nbsp;·&nbsp; Round 8 &nbsp;·&nbsp; 6 cards</div></div>
+</div>
+<div class="cont">
+
+<div class="rbar">
+  <div>
+    <div style="font-family:'Lora',serif;font-size:17px;font-weight:500">Round 8 — 6 cards</div>
+    <div style="font-size:11px;color:var(--color-text-secondary,#666);margin-top:3px">Total tricks entered must equal 6</div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-family:'Lora',serif;font-size:20px;font-weight:500;color:var(--amber-text)" id="ttl">0 / 6</div>
+    <div style="font-size:10px;color:var(--color-text-secondary,#666)">entered / cards</div>
+  </div>
+</div>
+
+<div class="csect" id="trick-list">
+  <div class="brow" data-bid="2" data-val="0" onclick="togRow(this)" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:0">
+    <div style="display:flex;align-items:center;gap:10px;padding:0">
+      <div class="seat">1</div>
+      <div style="flex:1"><div style="font-size:14px">Mikkel</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">Bid: 2 &nbsp;·&nbsp; Tricks: <span class="tdisp">—</span></div></div>
+      <div style="font-size:11px;color:var(--color-text-secondary,#666)">&#8964;</div>
+    </div>
+    <div class="texp" style="display:none;padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:0">
+        <button class="sbtn" style="width:44px;height:44px;font-size:22px;border-radius:var(--border-radius-md,8px) 0 0 var(--border-radius-md,8px);border-right:none" onclick="event.stopPropagation();adjRow(this,-1)">&#8722;</button>
+        <div class="sval" style="width:60px;height:44px;display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:26px;font-weight:500;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,.25));background:var(--color-background-primary,#fff)">0</div>
+        <button class="sbtn" style="width:44px;height:44px;font-size:22px;border-radius:0 var(--border-radius-md,8px) var(--border-radius-md,8px) 0;border-left:none" onclick="event.stopPropagation();adjRow(this,1)">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="brow" data-bid="1" data-val="0" onclick="togRow(this)" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:0">
+    <div style="display:flex;align-items:center;gap:10px;padding:0">
+      <div class="seat">2</div>
+      <div style="flex:1"><div style="font-size:14px">Anders</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">Bid: 1 &nbsp;·&nbsp; Tricks: <span class="tdisp">—</span></div></div>
+      <div style="font-size:11px;color:var(--color-text-secondary,#666)">&#8964;</div>
+    </div>
+    <div class="texp" style="display:none;padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:0">
+        <button class="sbtn" style="width:44px;height:44px;font-size:22px;border-radius:var(--border-radius-md,8px) 0 0 var(--border-radius-md,8px);border-right:none" onclick="event.stopPropagation();adjRow(this,-1)">&#8722;</button>
+        <div class="sval" style="width:60px;height:44px;display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:26px;font-weight:500;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,.25));background:var(--color-background-primary,#fff)">0</div>
+        <button class="sbtn" style="width:44px;height:44px;font-size:22px;border-radius:0 var(--border-radius-md,8px) var(--border-radius-md,8px) 0;border-left:none" onclick="event.stopPropagation();adjRow(this,1)">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="brow" data-bid="2" data-val="0" onclick="togRow(this)" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:0">
+    <div style="display:flex;align-items:center;gap:10px;padding:0">
+      <div class="seat">3</div>
+      <div style="flex:1"><div style="font-size:14px">Louise</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">Bid: 2 &nbsp;·&nbsp; Tricks: <span class="tdisp">—</span></div></div>
+      <div style="font-size:11px;color:var(--color-text-secondary,#666)">&#8964;</div>
+    </div>
+    <div class="texp" style="display:none;padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:0">
+        <button class="sbtn" style="width:44px;height:44px;font-size:22px;border-radius:var(--border-radius-md,8px) 0 0 var(--border-radius-md,8px);border-right:none" onclick="event.stopPropagation();adjRow(this,-1)">&#8722;</button>
+        <div class="sval" style="width:60px;height:44px;display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:26px;font-weight:500;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,.25));background:var(--color-background-primary,#fff)">0</div>
+        <button class="sbtn" style="width:44px;height:44px;font-size:22px;border-radius:0 var(--border-radius-md,8px) var(--border-radius-md,8px) 0;border-left:none" onclick="event.stopPropagation();adjRow(this,1)">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="brow" data-bid="0" data-val="0" onclick="togRow(this)" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:0">
+    <div style="display:flex;align-items:center;gap:10px;padding:0">
+      <div class="seat">4</div>
+      <div style="flex:1"><div style="font-size:14px">Thomas</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">Bid: 0 &nbsp;·&nbsp; Tricks: <span class="tdisp">—</span></div></div>
+      <div style="font-size:11px;color:var(--color-text-secondary,#666)">&#8964;</div>
+    </div>
+    <div class="texp" style="display:none;padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:0">
+        <button class="sbtn" style="width:44px;height:44px;font-size:22px;border-radius:var(--border-radius-md,8px) 0 0 var(--border-radius-md,8px);border-right:none" onclick="event.stopPropagation();adjRow(this,-1)">&#8722;</button>
+        <div class="sval" style="width:60px;height:44px;display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:26px;font-weight:500;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,.25));background:var(--color-background-primary,#fff)">0</div>
+        <button class="sbtn" style="width:44px;height:44px;font-size:22px;border-radius:0 var(--border-radius-md,8px) var(--border-radius-md,8px) 0;border-left:none" onclick="event.stopPropagation();adjRow(this,1)">+</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="altok" class="alt alto" style="display:none">&#10003; Tricks add up correctly — ready to confirm.</div>
+<div id="altwn" class="alt altw">Total tricks must equal 6 before confirming.</div>
+<button class="btnp" onclick="go(7)" id="cfmbtn" disabled style="opacity:.4">Confirm &amp; go to next round &#8594;</button>
+</div>
+<div class="bnav">
+  <div class="nit on"><div class="nico">&#9654;</div>Round</div>
+  <div class="nit" onclick="go(7)"><div class="nico">&#9783;</div>Scores</div>
+  <div class="nit" onclick="go(3)"><div class="nico">&#9432;</div>Game info</div>
+</div>
+`},
+
+/* 7 — Scoreboard */
+{name:'8. Live scoreboard',html:`
+<div class="sbar"><span>9:41</span><span>&#9646;&#9646;&#9646;</span></div>
+<div class="ahead">
+  <div><div class="atitle">Scoreboard</div><div class="asub">MØG-47 &nbsp;·&nbsp; Round 8 of 26</div></div>
+  <span class="bdg bl">&#9679; Live</span>
+</div>
+<div class="cont">
+
+<div class="slbl">Standings</div>
+<div class="csect">
+  <div class="strow">
+    <div class="rnk r1">1</div>
+    <div class="av" style="width:28px;height:28px;font-size:12px;background:#378ADD">A</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:500">Anders</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">4 exact &nbsp;·&nbsp; 3 wrong</div></div>
+    <div style="font-family:'Lora',serif;font-size:22px;font-weight:500;color:var(--accent-text)">89</div>
+  </div>
+  <div class="strow">
+    <div class="rnk r2">2</div>
+    <div class="av" style="width:28px;height:28px;font-size:12px">M</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:500">Mikkel <span style="font-size:11px;color:var(--color-text-secondary,#666)">(you)</span></div><div style="font-size:11px;color:var(--color-text-secondary,#666)">3 exact &nbsp;·&nbsp; 4 wrong</div></div>
+    <div style="font-family:'Lora',serif;font-size:22px;font-weight:500;color:var(--color-text-primary,#1a1a18)">71</div>
+  </div>
+  <div class="strow">
+    <div class="rnk r3">3</div>
+    <div class="av" style="width:28px;height:28px;font-size:12px;background:#D85A30">L</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:500">Louise</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">3 exact &nbsp;·&nbsp; 4 wrong</div></div>
+    <div style="font-family:'Lora',serif;font-size:22px;font-weight:500;color:var(--color-text-primary,#1a1a18)">58</div>
+  </div>
+  <div class="strow">
+    <div class="rnk">4</div>
+    <div class="av" style="width:28px;height:28px;font-size:12px;background:#BA7517">T</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:500">Thomas</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">2 exact &nbsp;·&nbsp; 5 wrong</div></div>
+    <div style="font-family:'Lora',serif;font-size:22px;font-weight:500;color:var(--red-text)">-4</div>
+  </div>
+</div>
+
+<div class="slbl">Round breakdown</div>
+<div style="overflow-x:auto;border-radius:var(--border-radius-lg,12px);border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,.1))">
+<table class="stable">
+  <thead><tr>
+    <th style="text-align:left;padding-left:12px">Round</th>
+    <th>Anders</th><th>Mikkel</th><th>Louise</th><th>Thomas</th>
+  </tr></thead>
+  <tbody>
+    <tr><td style="font-size:11px;color:var(--color-text-secondary,#666);text-align:left;padding-left:12px">R1 &nbsp;13&#9830;</td><td class="tex">+15</td><td class="twr">-2</td><td class="tex">+13</td><td class="twr">-3</td></tr>
+    <tr><td style="font-size:11px;color:var(--color-text-secondary,#666);text-align:left;padding-left:12px">R2 &nbsp;12&#9830;</td><td class="twr">-1</td><td class="tex">+14</td><td class="twr">-2</td><td class="tex">+12</td></tr>
+    <tr><td style="font-size:11px;color:var(--color-text-secondary,#666);text-align:left;padding-left:12px">R3 &nbsp;11&#9830;</td><td class="tex">+14</td><td class="tex">+11</td><td class="twr">-1</td><td class="twr">-1</td></tr>
+    <tr><td style="font-size:11px;color:var(--color-text-secondary,#666);text-align:left;padding-left:12px">R4 &nbsp;10&#9830;</td><td class="twr">-2</td><td class="twr">-3</td><td class="tex">+13</td><td class="tex">+12</td></tr>
+    <tr><td style="font-size:11px;color:var(--color-text-secondary,#666);text-align:left;padding-left:12px">R5 &nbsp;9&#9830;</td><td class="tex">+13</td><td class="twr">-1</td><td class="twr">-3</td><td class="twr">-2</td></tr>
+    <tr><td style="font-size:11px;color:var(--color-text-secondary,#666);text-align:left;padding-left:12px">R6 &nbsp;8&#9830;</td><td class="twr">-1</td><td class="tex">+14</td><td class="tex">+11</td><td class="twr">-4</td></tr>
+    <tr><td style="font-size:11px;color:var(--color-text-secondary,#666);text-align:left;padding-left:12px">R7 &nbsp;7&#9830;</td><td class="tex">+17</td><td class="twr">-2</td><td class="twr">-3</td><td class="tex">+10</td></tr>
+    <tr style="background:var(--amber-bg)"><td style="font-size:11px;color:var(--amber-text);font-weight:500;text-align:left;padding-left:12px">R8 &nbsp;6&#9830; &#9654;</td><td class="tcur">—</td><td class="tcur">—</td><td class="tcur">—</td><td class="tcur">—</td></tr>
+    <tr class="trow"><td style="text-align:left;padding-left:12px;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Total</td><td style="color:var(--accent-text)">89</td><td>71</td><td>58</td><td style="color:var(--red-text)">-4</td></tr>
+  </tbody>
+</table>
+</div>
+</div>
+<div class="bnav">
+  <div class="nit" onclick="go(4)"><div class="nico">&#9654;</div>Round</div>
+  <div class="nit on"><div class="nico">&#9783;</div>Scores</div>
+  <div class="nit" onclick="go(3)"><div class="nico">&#9432;</div>Game info</div>
+</div>
+`},
+
+/* 8 — Stats */
+{name:'9. Statistics',html:`
+<div class="sbar"><span>9:41</span><span>&#9646;&#9646;&#9646;</span></div>
+<div class="ahead">
+  <div><div class="atitle">Statistics</div><div class="asub">All-time leaderboard</div></div>
+  <div class="av">M</div>
+</div>
+<div class="cont" style="padding-bottom:0">
+
+<div class="slbl">Your all-time stats</div>
+<div class="mgrid">
+  <div class="met"><div class="mval">23</div><div class="mlbl">Games</div></div>
+  <div class="met"><div class="mval" style="color:var(--accent-text)">61%</div><div class="mlbl">Exact bids</div></div>
+  <div class="met"><div class="mval" style="color:var(--amber-text)">142</div><div class="mlbl">Best score</div></div>
+</div>
+
+<div class="slbl">Leaderboard</div>
+<div class="csect">
+  <div class="strow">
+    <div class="rnk r1">1</div>
+    <div class="av" style="width:28px;height:28px;font-size:12px;background:#378ADD">A</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:500">Anders</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">31 games</div></div>
+    <div style="text-align:right"><div style="font-size:15px;font-weight:500">67%</div><div style="font-size:10px;color:var(--color-text-secondary,#666)">exact bids</div></div>
+  </div>
+  <div class="strow" style="background:var(--accent-bg)">
+    <div class="rnk r2">2</div>
+    <div class="av" style="width:28px;height:28px;font-size:12px">M</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:500">Mikkel <span style="font-size:11px;color:var(--color-text-secondary,#666)">(you)</span></div><div style="font-size:11px;color:var(--color-text-secondary,#666)">23 games</div></div>
+    <div style="text-align:right"><div style="font-size:15px;font-weight:500">61%</div><div style="font-size:10px;color:var(--color-text-secondary,#666)">exact bids</div></div>
+  </div>
+  <div class="strow">
+    <div class="rnk r3">3</div>
+    <div class="av" style="width:28px;height:28px;font-size:12px;background:#D85A30">L</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:500">Louise</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">28 games</div></div>
+    <div style="text-align:right"><div style="font-size:15px;font-weight:500">58%</div><div style="font-size:10px;color:var(--color-text-secondary,#666)">exact bids</div></div>
+  </div>
+  <div class="strow">
+    <div class="rnk">4</div>
+    <div class="av" style="width:28px;height:28px;font-size:12px;background:#BA7517">T</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:500">Thomas</div><div style="font-size:11px;color:var(--color-text-secondary,#666)">19 games</div></div>
+    <div style="text-align:right"><div style="font-size:15px;font-weight:500">49%</div><div style="font-size:10px;color:var(--color-text-secondary,#666)">exact bids</div></div>
+  </div>
+</div>
+
+<div class="slbl">Recent games</div>
+<div class="card">
+  <div class="gctop">
+    <div><div class="gccode">MØG-35</div><div class="gcmeta"><span>5 players</span><span>26 rounds</span></div></div>
+    <div style="font-family:'Lora',serif;font-size:22px;font-weight:500;color:var(--accent-text)">142</div>
+  </div>
+  <div class="gcfoot">2nd place &nbsp;·&nbsp; 3 days ago</div>
+</div>
+<div class="card">
+  <div class="gctop">
+    <div><div class="gccode">MØG-31</div><div class="gcmeta"><span>4 players</span><span>26 rounds</span></div></div>
+    <div style="font-family:'Lora',serif;font-size:22px;font-weight:500;color:var(--amber-text)">118</div>
+  </div>
+  <div class="gcfoot">1st place &nbsp;·&nbsp; 1 week ago</div>
+</div>
+<div class="gap12"></div>
+</div>
+<div class="bnav">
+  <div class="nit"><div class="nico">&#8962;</div>Home</div>
+  <div class="nit on"><div class="nico">&#9783;</div>Stats</div>
+  <div class="nit"><div class="nico">&#9711;</div>Profile</div>
+</div>
+`}
+];
+
+let cur=0;
+
+function go(i){cur=i;render()}
+function ns(){if(cur<S.length-1){cur++;render()}}
+function ps(){if(cur>0){cur--;render()}}
+
+function bidAdj(btn,d){
+  const bv=document.getElementById('bidval');
+  if(!bv)return;
+  let n=parseInt(bv.textContent)+d;
+  if(n<0)n=0;if(n>13)n=13;
+  bv.textContent=n;
+  const bb=document.getElementById('bidbtn');
+  if(bb)bb.textContent='Confirm Louise\'s bid: '+n+' →';
+}
+
+function togRow(row){
+  const isOpen=row.querySelector('.texp').style.display!=='none';
+  document.querySelectorAll('#trick-list .brow').forEach(r=>r.style.background='');
+  document.querySelectorAll('#trick-list .texp').forEach(e=>e.style.display='none');
+  if(!isOpen){
+    row.querySelector('.texp').style.display='block';
+    row.style.background='var(--accent-bg)';
+    row.querySelector('.tdisp').textContent=row.dataset.val||'0';
+  }
+}
+
+function adjRow(btn,d){
+  const row=btn.closest('.brow');
+  const sv=row.querySelector('.sval');
+  let n=parseInt(sv.textContent)+d;
+  if(n<0)n=0;if(n>13)n=13;
+  sv.textContent=n;
+  row.dataset.val=n;
+  row.querySelector('.tdisp').textContent=n;
+  upd();
+}
+
+function adj(btn,d){
+  const row=btn.closest('.brow');
+  const sv=row.querySelector('.sval');
+  let n=parseInt(sv.textContent)+d;
+  if(n<0)n=0;if(n>13)n=13;
+  sv.textContent=n;
+  upd();
+}
+
+function upd(){
+  const rows=document.querySelectorAll('#trick-list .brow');
+  let t=0;rows.forEach(r=>t+=parseInt(r.dataset.val||0));
+  const el=document.getElementById('ttl');
+  if(el)el.textContent=t+' / 6';
+  const ok=document.getElementById('altok');
+  const wn=document.getElementById('altwn');
+  const cb=document.getElementById('cfmbtn');
+  if(ok&&wn&&cb){
+    if(t===6){ok.style.display='block';wn.style.display='none';cb.disabled=false;cb.style.opacity='1'}
+    else{ok.style.display='none';wn.style.display='block';cb.disabled=true;cb.style.opacity='.4'}
+  }
+}
+
+function render(){
+  const ph=document.getElementById('ph');
+  ph.innerHTML=S[cur].html;
+  ph.scrollTop=0;
+  document.getElementById('sn').textContent=S[cur].name;
+  document.getElementById('sc').textContent=(cur+1)+' of '+S.length+' screens';
+  document.getElementById('pb').disabled=cur===0;
+  document.getElementById('nb').disabled=cur===S.length-1;
+}
+
+render();
+</script>
+</html>

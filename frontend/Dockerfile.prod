@@ -1,0 +1,17 @@
+# Stage 1 — build the React app
+FROM node:20-slim AS builder
+
+WORKDIR /app
+COPY package.json .
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Stage 2 — serve static files from nginx
+FROM nginx:alpine
+
+# Copy built files into nginx's default serve directory
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# nginx.conf is provided by the nginx service in docker-compose.prod.yml
+# This image is only used to get the built files into the right place.

@@ -1,0 +1,39 @@
+services:
+
+  backend:
+    build: ./backend
+    container_name: mogspar_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source for hot-reload during development
+      - ./backend:/app
+      # Persist the SQLite database file outside the container
+      - mogspar_db:/app/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: mogspar_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount source for hot-reload during development
+      - ./frontend:/app
+      # Keep node_modules inside the container — do not overwrite with host
+      - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mogspar_db:

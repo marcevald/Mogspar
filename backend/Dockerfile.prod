@@ -1,0 +1,20 @@
+FROM python:3.12-slim
+
+RUN useradd --create-home appuser
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Create data directory for SQLite and give appuser ownership of the whole app
+RUN mkdir -p /app/data && chown -R appuser:appuser /app
+
+USER appuser
+
+EXPOSE 8000
+
+# Production: no --reload, 2 workers
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
