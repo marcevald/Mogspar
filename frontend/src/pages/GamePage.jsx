@@ -949,6 +949,11 @@ function TrickEntryView({ game, round, refresh }) {
   const valid = totalTricks === round.cards_per_player
   const activeValue = activeSeat !== null ? (effectiveTricks[activeSeat] ?? 0) : 0
 
+  // Every seat must be explicitly acknowledged before confirm enables —
+  // otherwise the pre-filled numbers could be committed with one reflex tap.
+  const allAcknowledged = seats.every(s => touched.has(s))
+  const acknowledgedCount = seats.filter(s => touched.has(s)).length
+
   function adjustActive(delta) {
     if (activeSeat === null || activeSeat === lastSeat) return
     setTricks(tv => ({
@@ -959,12 +964,18 @@ function TrickEntryView({ game, round, refresh }) {
   }
 
   function handleRowClick(seat) {
-    if (seat === lastSeat) return
+    // The auto-resolved last seat has no stepper — tapping it only marks
+    // it as reviewed so the GM must at least see the computed value.
+    if (seat === lastSeat) {
+      setTouched(s => new Set(s).add(seat))
+      return
+    }
     setActiveSeat(s => (s === seat ? null : seat))
+    setTouched(s => new Set(s).add(seat))
   }
 
   async function handleConfirm() {
-    if (!valid) return
+    if (!valid || !allAcknowledged) return
     setErr('')
     setSubmitting(true)
     try {
@@ -1010,7 +1021,12 @@ function TrickEntryView({ game, round, refresh }) {
           const t = effectiveTricks[seat] ?? 0
           const isAuto = seat === lastSeat
           const isActive = activeSeat === seat
-          const isDone = isAuto || touched.has(seat)
+          const reviewed = touched.has(seat)
+          const subtitle = isActive
+            ? '● Entering tricks'
+            : reviewed
+              ? `Bid: ${bid} · Tricks: ${t}${isAuto ? ' (auto)' : ''}`
+              : `Bid: ${bid} · Tricks: ${t}${isAuto ? ' (auto)' : ''} · tap to review`
 
           return (
             <StepperRow
@@ -1018,32 +1034,33 @@ function TrickEntryView({ game, round, refresh }) {
               seatNumber={seat + 1}
               name={p.username}
               isDealer={seat === round.dealer_seat}
-              subtitle={
-                isActive
-                  ? '● Entering tricks'
-                  : `Bid: ${bid} · Tricks: ${t}${isAuto ? ' (auto)' : ''}`
-              }
+              subtitle={subtitle}
               isActive={isActive}
               stepperValue={activeValue}
               onDecrement={() => adjustActive(-1)}
               onIncrement={() => adjustActive(+1)}
               decrementDisabled={activeValue <= 0}
               incrementDisabled={false}
-              confirmedIcon={!isActive && isDone ? '✓' : null}
-              clickable={!isAuto}
+              confirmedIcon={!isActive && reviewed ? '✓' : null}
+              clickable={true}
               onClick={() => handleRowClick(seat)}
             />
           )
         })}
       </div>
 
-      {valid
-        ? <div className="alt alto">✓ Tricks add up correctly ({round.cards_per_player}).</div>
-        : <div className="alt altw">Total tricks must equal {round.cards_per_player} before confirming.</div>
-      }
+      {!allAcknowledged ? (
+        <div className="alt altw">
+          Review each player before confirming ({acknowledgedCount}/{seats.length} checked).
+        </div>
+      ) : valid ? (
+        <div className="alt alto">✓ All players reviewed — tricks add up to {round.cards_per_player}.</div>
+      ) : (
+        <div className="alt altw">Total tricks must equal {round.cards_per_player} before confirming.</div>
+      )}
       {err && <p className="alt altw">{err}</p>}
 
-      <button className="btnp" onClick={handleConfirm} disabled={!valid || submitting}>
+      <button className="btnp" onClick={handleConfirm} disabled={!valid || !allAcknowledged || submitting}>
         {submitting ? 'Saving…' : 'Confirm & go to next round →'}
       </button>
     </>
