@@ -1,8 +1,9 @@
-"""Statistics routes — leaderboard and personal stats."""
+"""Statistics routes — leaderboard, personal stats, and scoped queries."""
 
 from datetime import datetime
+from enum import Enum
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -11,6 +12,21 @@ from database import get_db
 from models import Game, GameStatus, GameVariant, Player, Round, RoundStatus, TrickResult, User
 
 router = APIRouter(prefix="/stats", tags=["stats"])
+
+
+# ---------------------------------------------------------------------------
+# Scope types
+# ---------------------------------------------------------------------------
+
+class Scope(str, Enum):
+    all = "all"
+    players = "players"
+    game = "game"
+
+
+class Match(str, Enum):
+    exact = "exact"
+    superset = "superset"
 
 
 # ---------------------------------------------------------------------------
@@ -195,3 +211,160 @@ def get_my_stats(
         bid_accuracy=round(my["bids_hit"] / my["bids_total"], 2) if my and my["bids_total"] else -1,
         recent_games=recent_games,
     )
+
+
+# ---------------------------------------------------------------------------
+# Scoped stats + lineup discovery
+# ---------------------------------------------------------------------------
+
+class ScopedStatsResponse(BaseModel):
+    scope: Scope
+    match: Optional[Match] = None
+    players_filter: Optional[list[str]] = None
+    game_code: Optional[str] = None
+    variant: Optional[GameVariant] = None
+    games_count: int
+    players: list[LeaderboardEntry]
+
+
+class LineupInfo(BaseModel):
+    players: list[str]      # sorted usernames
+    games_count: int
+
+
+def _usernames_of(game: Game) -> frozenset[str]:
+    return frozenset(gp.player.username for gp in game.players)
+
+
+def _filter_finished_games(
+    db: Session,
+    scope: Scope,
+    *,
+    variant: Optional[GameVariant] = None,
+    players_filter: Optional[list[str]] = None,
+    match: Optional[Match] = None,
+    game_code: Optional[str] = None,
+    current_user: Optional[User] = None,
+) -> list[Game]:
+    """
+    Returns the list of finished games matching the given scope and filters.
+    For scope=game the caller must be a player in the game (handled here).
+    """
+    q = db.query(Game).filter(Game.status == GameStatus.finished)
+    if variant is not None:
+        q = q.filter(Game.variant == variant)
+
+    if scope == Scope.all:
+        return q.all()
+
+    if scope == Scope.players:
+        if not players_filter:
+            raise HTTPException(status_code=400, detail="'players' is required for scope=players")
+        target = frozenset(players_filter)
+        if match is None or match == Match.exact:
+            return [g for g in q.all() if _usernames_of(g) == target]
+        return [g for g in q.all() if target.issubset(_usernames_of(g))]
+
+    # scope == Scope.game
+    if not game_code:
+        raise HTTPException(status_code=400, detail="'game_code' is required for scope=game")
+    game = db.query(Game).filter(Game.code == game_code).first()
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if game.status != GameStatus.finished:
+        raise HTTPException(status_code=400, detail="Game is not finished")
+    if variant is not None and game.variant != variant:
+        return []
+    if current_user is not None:
+        is_player = any(gp.player.user_id == current_user.id for gp in game.players)
+        if not is_player:
+            raise HTTPException(status_code=403, detail="You are not a player in this game")
+    return [game]
+
+
+@router.get("/scoped", response_model=ScopedStatsResponse)
+def get_scoped_stats(
+    scope: Scope = Query(...),
+    match: Optional[Match] = Query(None),
+    players: Optional[str] = Query(None, description="Comma-separated usernames"),
+    game_code: Optional[str] = Query(None),
+    variant: Optional[GameVariant] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Unified stats endpoint. Returns an aggregated leaderboard across the
+    games matching the given scope. See the Scope enum for available modes.
+    """
+    players_list: Optional[list[str]] = None
+    if players:
+        players_list = [p.strip() for p in players.split(",") if p.strip()]
+        if not players_list:
+            raise HTTPException(status_code=400, detail="'players' cannot be empty")
+
+    games = _filter_finished_games(
+        db,
+        scope,
+        variant=variant,
+        players_filter=players_list,
+        match=match,
+        game_code=game_code,
+        current_user=current_user,
+    )
+
+    stats = _compute_stats_for_games(games)
+    entries = [
+        LeaderboardEntry(
+            username=s["player"].username,
+            is_registered=s["player"].user_id is not None,
+            games_played=len(s["game_ids"]),
+            games_won=s["games_won"],
+            total_score=s["total_score"],
+            rounds_played=s["rounds_played"],
+            bid_accuracy=round(s["bids_hit"] / s["bids_total"], 2) if s["bids_total"] else -1,
+        )
+        for s in stats.values()
+    ]
+    return ScopedStatsResponse(
+        scope=scope,
+        match=match if scope == Scope.players else None,
+        players_filter=players_list if scope == Scope.players else None,
+        game_code=game_code if scope == Scope.game else None,
+        variant=variant,
+        games_count=len(games),
+        players=sorted(entries, key=lambda e: e.total_score, reverse=True),
+    )
+
+
+@router.get("/lineups", response_model=list[LineupInfo])
+def get_my_lineups(
+    min_games: int = Query(2, ge=1, description="Minimum games for a lineup to surface"),
+    variant: Optional[GameVariant] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Recurring exact participant sets the current user has played with,
+    sorted by games_count descending. A lineup only surfaces after at
+    least min_games (default 2) occurrences.
+    """
+    player = db.query(Player).filter(Player.user_id == current_user.id).first()
+    if not player:
+        return []
+
+    game_ids = [gp.game_id for gp in player.game_players]
+    q = db.query(Game).filter(Game.id.in_(game_ids), Game.status == GameStatus.finished)
+    if variant is not None:
+        q = q.filter(Game.variant == variant)
+
+    counts: dict[frozenset[str], int] = {}
+    for g in q.all():
+        key = _usernames_of(g)
+        counts[key] = counts.get(key, 0) + 1
+
+    lineups = [
+        LineupInfo(players=sorted(list(k)), games_count=v)
+        for k, v in counts.items()
+        if v >= min_games
+    ]
+    return sorted(lineups, key=lambda l: (-l.games_count, l.players))

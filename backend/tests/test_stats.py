@@ -181,3 +181,136 @@ def test_me_variant_filter(client):
 
     body_pb = client.get("/stats/me?variant=pirat_bridge", headers=alice).json()
     assert body_pb["games_played"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Scoped stats (/stats/scoped)
+# ---------------------------------------------------------------------------
+
+def _finish_game(client, gm_headers, participants):
+    """
+    Build and finish a game. `participants` is a list of (username, headers)
+    tuples where the first entry is the game master. Uses cards=5 so bids of 1
+    each and tricks distributed as (5-(n-1), 1, 1, ...) is always safe.
+    """
+    n = len(participants)
+    cards = 5
+    code = client.post("/games", headers=gm_headers).json()["code"]
+    for _, h in participants[1:]:
+        client.post(f"/games/{code}/join", headers=h)
+    client.post(f"/games/{code}/start", headers=gm_headers)
+    client.post(f"/games/{code}/rounds", json={"cards_per_player": cards}, headers=gm_headers)
+    for _, h in participants:
+        client.post(f"/games/{code}/rounds/1/bid", json={"bid": 1}, headers=h)
+    results = [
+        {"username": u, "tricks_won": (cards - (n - 1)) if i == 0 else 1}
+        for i, (u, _) in enumerate(participants)
+    ]
+    client.post(f"/games/{code}/rounds/1/results", headers=gm_headers, json={"results": results})
+    client.post(f"/games/{code}/finish", headers=gm_headers)
+    return code
+
+
+def test_scoped_all(client):
+    _finished_game(client)
+    alice = register_and_login(client, "alice", "alice@example.com")
+    body = client.get("/stats/scoped?scope=all", headers=alice).json()
+    assert body["scope"] == "all"
+    assert body["games_count"] == 1
+    assert {p["username"] for p in body["players"]} == {"alice", "bob"}
+
+
+def test_scoped_players_exact_match(client):
+    # Game 1: alice + bob
+    _finished_game(client)
+    # Game 2: alice + bob + carol
+    alice = register_and_login(client, "alice", "alice@example.com")
+    bob   = register_and_login(client, "bob",   "bob@example.com")
+    carol = register_and_login(client, "carol", "carol@example.com")
+    _finish_game(client, alice, [("alice", alice), ("bob", bob), ("carol", carol)])
+
+    body = client.get(
+        "/stats/scoped?scope=players&match=exact&players=alice,bob", headers=alice
+    ).json()
+    assert body["games_count"] == 1
+    assert {p["username"] for p in body["players"]} == {"alice", "bob"}
+
+
+def test_scoped_players_superset_match(client):
+    _finished_game(client)
+    alice = register_and_login(client, "alice", "alice@example.com")
+    bob   = register_and_login(client, "bob",   "bob@example.com")
+    carol = register_and_login(client, "carol", "carol@example.com")
+    _finish_game(client, alice, [("alice", alice), ("bob", bob), ("carol", carol)])
+
+    body = client.get(
+        "/stats/scoped?scope=players&match=superset&players=alice,bob", headers=alice
+    ).json()
+    assert body["games_count"] == 2
+    assert {p["username"] for p in body["players"]} == {"alice", "bob", "carol"}
+
+
+def test_scoped_players_requires_players_param(client):
+    alice = register_and_login(client, "alice", "alice@example.com")
+    r = client.get("/stats/scoped?scope=players&match=exact", headers=alice)
+    assert r.status_code == 400
+
+
+def test_scoped_game(client):
+    code, alice, _ = _finished_game(client)
+    body = client.get(f"/stats/scoped?scope=game&game_code={code}", headers=alice).json()
+    assert body["games_count"] == 1
+    assert body["game_code"] == code
+
+
+def test_scoped_game_requires_membership(client):
+    code, _, _ = _finished_game(client)
+    carol = register_and_login(client, "carol", "carol@example.com")
+    r = client.get(f"/stats/scoped?scope=game&game_code={code}", headers=carol)
+    assert r.status_code == 403
+
+
+def test_scoped_game_unknown_code(client):
+    alice = register_and_login(client, "alice", "alice@example.com")
+    r = client.get("/stats/scoped?scope=game&game_code=NOPE", headers=alice)
+    assert r.status_code == 404
+
+
+def test_scoped_requires_auth(client):
+    assert client.get("/stats/scoped?scope=all").status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Lineups (/stats/lineups)
+# ---------------------------------------------------------------------------
+
+def test_lineups_surfaces_after_min_games(client):
+    # Play the same alice+bob lineup twice
+    _finished_game(client)
+    alice = register_and_login(client, "alice", "alice@example.com")
+    bob   = register_and_login(client, "bob",   "bob@example.com")
+    _finish_game(client, alice, [("alice", alice), ("bob", bob)])
+
+    body = client.get("/stats/lineups", headers=alice).json()
+    assert len(body) == 1
+    assert body[0]["players"] == ["alice", "bob"]
+    assert body[0]["games_count"] == 2
+
+
+def test_lineups_min_games_filter(client):
+    _finished_game(client)  # alice+bob only once
+    alice = register_and_login(client, "alice", "alice@example.com")
+    body = client.get("/stats/lineups?min_games=2", headers=alice).json()
+    assert body == []
+
+    body_1 = client.get("/stats/lineups?min_games=1", headers=alice).json()
+    assert len(body_1) == 1
+
+
+def test_lineups_requires_auth(client):
+    assert client.get("/stats/lineups").status_code == 401
+
+
+def test_lineups_empty_when_no_games(client):
+    alice = register_and_login(client, "alice", "alice@example.com")
+    assert client.get("/stats/lineups", headers=alice).json() == []

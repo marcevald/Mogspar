@@ -72,6 +72,21 @@ export const api = {
   stats: {
     leaderboard: (variant) => request('GET', `/stats/leaderboard${variant ? `?variant=${variant}` : ''}`),
     me: (variant) => request('GET', `/stats/me${variant ? `?variant=${variant}` : ''}`),
+    scoped: ({ scope, match, players, game_code, variant } = {}) => {
+      const params = new URLSearchParams()
+      params.set('scope', scope)
+      if (match) params.set('match', match)
+      if (players && players.length) params.set('players', players.join(','))
+      if (game_code) params.set('game_code', game_code)
+      if (variant) params.set('variant', variant)
+      return request('GET', `/stats/scoped?${params.toString()}`)
+    },
+    lineups: ({ min_games = 2, variant } = {}) => {
+      const params = new URLSearchParams()
+      params.set('min_games', String(min_games))
+      if (variant) params.set('variant', variant)
+      return request('GET', `/stats/lineups?${params.toString()}`)
+    },
   },
 
   rounds: {
