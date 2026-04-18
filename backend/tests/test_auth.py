@@ -102,3 +102,31 @@ def test_me_requires_auth(client):
 
 def test_me_rejects_bad_token(client):
     assert client.get("/auth/me", headers={"Authorization": "Bearer totallyinvalid"}).status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Token expiry
+# ---------------------------------------------------------------------------
+
+def test_access_token_expiry_matches_config(client):
+    import time
+    import jwt
+    from config import settings
+    from auth import ALGORITHM
+
+    register(client)
+    before = int(time.time())
+    token = login(client).json()["access_token"]
+    after = int(time.time())
+
+    payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+    expected_seconds = settings.access_token_expire_minutes * 60
+
+    # exp should be roughly (now + expected_seconds), within the login request window + a few seconds slack
+    assert before + expected_seconds - 5 <= payload["exp"] <= after + expected_seconds + 5
+
+
+def test_access_token_expiry_is_24h(client):
+    """Guards against accidental regression of the 24-hour session length."""
+    from config import settings
+    assert settings.access_token_expire_minutes == 1440

@@ -4,6 +4,7 @@ import AuthPage from './pages/AuthPage'
 import HomePage from './pages/HomePage'
 import GamePage from './pages/GamePage'
 import Spinner from './components/Spinner'
+import useWakeLock from './hooks/useWakeLock'
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
@@ -19,13 +20,22 @@ function RedirectIfAuthed({ children }) {
   return children
 }
 
+function WakeLockWhileAuthed() {
+  const { user } = useAuth()
+  useWakeLock(Boolean(user))
+  return null
+}
+
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<RedirectIfAuthed><AuthPage /></RedirectIfAuthed>} />
-      <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
-      <Route path="/game/:code" element={<RequireAuth><GamePage /></RequireAuth>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <WakeLockWhileAuthed />
+      <Routes>
+        <Route path="/login" element={<RedirectIfAuthed><AuthPage /></RedirectIfAuthed>} />
+        <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
+        <Route path="/game/:code" element={<RequireAuth><GamePage /></RequireAuth>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   )
 }

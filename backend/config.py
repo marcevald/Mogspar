@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     # Security — must be set in .env, no default allowed in production
     secret_key: str
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = 1440
 
     # Database
     database_url: str = "sqlite:///./mogspar.db"
