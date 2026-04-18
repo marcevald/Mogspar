@@ -181,7 +181,13 @@ def gm_place_bid(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Game master places a bid on behalf of any player."""
+    """
+    Game master places or updates a bid on behalf of any player.
+
+    A previously-confirmed bid can be re-entered *only* while no
+    later-ordered player (in this round's bidding order) has bid yet.
+    Once the next seat confirms, the prior seat's bid is locked.
+    """
     game = _get_active_game(code, db)
 
     if game.game_master_id != current_user.id:
@@ -206,26 +212,59 @@ def gm_place_bid(
     if not gp:
         raise HTTPException(status_code=404, detail=f"Player '{body.username}' not found in this game")
 
-    already_bid = (
+    num_players = len(game.players)
+    # Position of each seat in this round's bidding order (0 = first to bid).
+    pos_by_seat = {(round_.first_player_seat + i) % num_players: i for i in range(num_players)}
+    pos_by_player_id = {g.player_id: pos_by_seat[g.seat_index] for g in game.players}
+    target_pos = pos_by_seat[gp.seat_index]
+
+    existing_bid = (
         db.query(Bid).filter(Bid.round_id == round_.id, Bid.player_id == gp.player_id).first()
     )
-    if already_bid:
-        raise HTTPException(status_code=400, detail=f"{body.username} has already bid this round")
 
-    if len(round_.bids) == len(game.players) - 1:
+    if existing_bid is not None:
+        # Edit path: allowed only if no later-ordered player has confirmed a bid.
+        later_bid_exists = any(
+            pos_by_player_id[b.player_id] > target_pos for b in round_.bids
+        )
+        if later_bid_exists:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{body.username}'s bid is locked — a later player has already bid",
+            )
+
+        # Forbidden-bid check still applies if the edited seat is the last bidder.
+        # In practice this branch is unreachable (the round would already be in 'playing')
+        # but we re-check defensively so the rule cannot be bypassed via edits.
+        if target_pos == num_players - 1:
+            sum_others = sum(b.bid for b in round_.bids if b.player_id != gp.player_id)
+            forbidden = round_.cards_per_player - sum_others
+            if forbidden >= 0 and body.bid == forbidden:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Forbidden bid: total bids cannot equal cards dealt",
+                )
+
+        existing_bid.bid = body.bid
+        db.commit()
+        db.refresh(round_)
+        return RoundResponse.from_round(round_)
+
+    # New bid path.
+    if len(round_.bids) == num_players - 1:
         sum_so_far = sum(b.bid for b in round_.bids)
         forbidden = round_.cards_per_player - sum_so_far
         if forbidden >= 0 and body.bid == forbidden:
             raise HTTPException(
                 status_code=400,
-                detail=f"Forbidden bid: total bids cannot equal cards dealt",
+                detail="Forbidden bid: total bids cannot equal cards dealt",
             )
 
     db.add(Bid(round_id=round_.id, player_id=gp.player_id, bid=body.bid))
     db.flush()
 
     db.refresh(round_)
-    if len(round_.bids) == len(game.players):
+    if len(round_.bids) == num_players:
         round_.status = RoundStatus.playing
 
     db.commit()

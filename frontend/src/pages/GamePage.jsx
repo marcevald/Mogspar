@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import Spinner from '../components/Spinner'
+import StepperRow from '../components/StepperRow'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -673,42 +674,59 @@ function GameOverView({ scoreboard }) {
 
 function BiddingGMView({ game, round, numPlayers, refresh }) {
   const order = biddingOrder(round.first_player_seat, numPlayers)
-  const bidsByUsername = Object.fromEntries(round.bids.map(b => [b.username, b.bid]))
   const bidsBySeat = Object.fromEntries(round.bids.map(b => [b.seat_index, b.bid]))
   const playerBySeat = Object.fromEntries(game.players.map(p => [p.seat_index, p]))
 
-  // Find next seat in order that hasn't bid
+  // Position of the most-recently-confirmed bid in bidding order — that's the
+  // only confirmed row the GM may tap to re-edit (backend enforces the same rule).
+  const confirmedPositions = order
+    .map((seat, i) => (bidsBySeat[seat] !== undefined ? i : -1))
+    .filter(i => i >= 0)
+  const lastConfirmedPos = confirmedPositions.length ? Math.max(...confirmedPositions) : -1
+  const lastConfirmedSeat = lastConfirmedPos >= 0 ? order[lastConfirmedPos] : null
+
   const nextSeat = order.find(s => bidsBySeat[s] === undefined) ?? null
   const bidsSubmitted = round.bids.length
 
-  // Compute forbidden bid for last bidder
   const sumSoFar = Object.values(bidsBySeat).reduce((a, b) => a + b, 0)
-  const forbiddenBid = round.cards_per_player - sumSoFar
   const isLastBidder = bidsSubmitted === numPlayers - 1
+  const forbiddenBidForNext = round.cards_per_player - sumSoFar
 
-  const [bidVal, setBidVal] = useState(() => Math.max(0, Math.floor((round.cards_per_player - sumSoFar) / Math.max(1, numPlayers - bidsSubmitted))))
-  const [submitting, setSubmitting] = useState(false)
-  const [err, setErr] = useState('')
+  const [editingSeat, setEditingSeat] = useState(null)
+  const activeSeat = editingSeat ?? nextSeat
+  const isEditing = editingSeat !== null
+  const activePlayer = activeSeat !== null ? playerBySeat[activeSeat] : null
 
-  const currentPlayer = nextSeat !== null ? playerBySeat[nextSeat] : null
-
-  // Recalculate suggestion whenever the active seat changes
-  useEffect(() => {
-    if (nextSeat === null) return
+  // Default stepper value: pre-fill edits with the existing bid; otherwise suggest average.
+  const [bidVal, setBidVal] = useState(() => {
     const remaining = round.cards_per_player - sumSoFar
     const remainingBidders = numPlayers - bidsSubmitted
     const avg = Math.max(0, Math.floor(remaining / Math.max(1, remainingBidders)))
-    // Last bidder: suggest one less than remaining to avoid the forbidden value
-    const suggested = isLastBidder ? Math.max(0, remaining - 1) : avg
-    setBidVal(suggested)
-  }, [nextSeat])
+    return isLastBidder ? Math.max(0, remaining - 1) : avg
+  })
+  const [submitting, setSubmitting] = useState(false)
+  const [err, setErr] = useState('')
+
+  // When the active seat changes (round advances, edit opens/closes), recompute pre-fill.
+  useEffect(() => {
+    if (activeSeat === null) return
+    if (editingSeat !== null) {
+      setBidVal(bidsBySeat[editingSeat] ?? 0)
+      return
+    }
+    const remaining = round.cards_per_player - sumSoFar
+    const remainingBidders = numPlayers - bidsSubmitted
+    const avg = Math.max(0, Math.floor(remaining / Math.max(1, remainingBidders)))
+    setBidVal(isLastBidder ? Math.max(0, remaining - 1) : avg)
+  }, [activeSeat, editingSeat])
 
   async function handleConfirm() {
-    if (!currentPlayer) return
+    if (!activePlayer) return
     setErr('')
     setSubmitting(true)
     try {
-      await api.rounds.gmBid(game.code, round.round_number, currentPlayer.username, bidVal)
+      await api.rounds.gmBid(game.code, round.round_number, activePlayer.username, bidVal)
+      setEditingSeat(null)
       await refresh()
     } catch (e) {
       setErr(e.message)
@@ -717,7 +735,23 @@ function BiddingGMView({ game, round, numPlayers, refresh }) {
     }
   }
 
-  const isForbidden = isLastBidder && bidVal === forbiddenBid && forbiddenBid >= 0
+  function handleRowClick(seat) {
+    if (seat === editingSeat) {
+      // Tap the editing row again to cancel.
+      setEditingSeat(null)
+      setErr('')
+      return
+    }
+    if (seat === lastConfirmedSeat && !isEditing) {
+      setEditingSeat(seat)
+      setErr('')
+    }
+  }
+
+  // Forbidden-bid check only concerns the last bidder's *new* bid.
+  // During edit we reopen an earlier slot, so forbidden doesn't apply to bidVal.
+  const isForbiddenNewBid =
+    !isEditing && isLastBidder && bidVal === forbiddenBidForNext && forbiddenBidForNext >= 0
 
   return (
     <>
@@ -745,53 +779,72 @@ function BiddingGMView({ game, round, numPlayers, refresh }) {
           if (!player) return null
           const bid = bidsBySeat[seat]
           const confirmed = bid !== undefined
-          const isActive = seat === nextSeat
-          const isLast = !confirmed && bidsSubmitted === numPlayers - 1 && i === order.findIndex(s => bidsBySeat[s] === undefined)
+          const isActive = seat === activeSeat
+          const isWaitingLast = !confirmed && !isActive
+            && bidsSubmitted === numPlayers - 1
+            && i === order.findIndex(s => bidsBySeat[s] === undefined)
+          const clickable =
+            (seat === lastConfirmedSeat && !isEditing)
+            || seat === editingSeat
+
+          const subtitle = isActive
+            ? (isEditing ? '● Editing' : '● Entering now')
+            : confirmed
+              ? (seat === lastConfirmedSeat ? 'Tap to edit' : null)
+              : (isWaitingLast ? 'Last to bid' : 'Waiting')
+
+          const badge = isWaitingLast && forbiddenBidForNext >= 0
+            ? <span className="fpill">≠ {forbiddenBidForNext}</span>
+            : null
 
           return (
-            <div key={seat} className={`brow ${isActive ? 'active' : ''}`}>
-              <div className="seat" style={isActive ? { background: 'var(--amber)', color: '#fff' } : {}}>
-                {seat + 1}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: confirmed ? 400 : 500, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {player.username}
-                  {seat === round.dealer_seat && <span style={{ fontSize: 10, color: 'var(--amber-text)' }}>🂠</span>}
-                </div>
-                {isActive && <div style={{ fontSize: 11, color: 'var(--amber-text)' }}>● Entering now</div>}
-                {!confirmed && !isActive && (
-                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                    {isLast ? 'Last to bid' : 'Waiting'}
-                  </div>
-                )}
-              </div>
-              {confirmed && <div className="bconf">{bid}</div>}
-              {isActive && (
-                <div className="stpr">
-                  <button className="sbtn" onClick={() => setBidVal(v => Math.max(0, v - 1))} disabled={bidVal <= 0}>−</button>
-                  <span className="sval">{bidVal}</span>
-                  <button className="sbtn" onClick={() => setBidVal(v => Math.min(round.cards_per_player, v + 1))} disabled={bidVal >= round.cards_per_player}>+</button>
-                </div>
-              )}
-              {isLast && !confirmed && !isActive && forbiddenBid >= 0 && (
-                <span className="fpill">≠ {forbiddenBid}</span>
-              )}
-            </div>
+            <StepperRow
+              key={seat}
+              seatNumber={seat + 1}
+              name={player.username}
+              isDealer={seat === round.dealer_seat}
+              subtitle={subtitle}
+              badge={badge}
+              isActive={isActive}
+              stepperValue={bidVal}
+              onDecrement={() => setBidVal(v => Math.max(0, v - 1))}
+              onIncrement={() => setBidVal(v => Math.min(round.cards_per_player, v + 1))}
+              decrementDisabled={bidVal <= 0}
+              incrementDisabled={bidVal >= round.cards_per_player}
+              confirmedValue={confirmed && !isActive ? bid : undefined}
+              clickable={clickable}
+              onClick={() => handleRowClick(seat)}
+            />
           )
         })}
       </div>
 
-      {isLastBidder && forbiddenBid >= 0 && (
+      {!isEditing && isLastBidder && forbiddenBidForNext >= 0 && (
         <div className="alt altw">
-          Last bidder cannot bid {forbiddenBid} (would make total equal cards dealt).
+          Last bidder cannot bid {forbiddenBidForNext} (would make total equal cards dealt).
         </div>
       )}
-      {isForbidden && <div className="alt altw" style={{ background: 'var(--red-bg)', color: 'var(--red-text)', borderColor: 'var(--red-text)' }}>This bid is forbidden — choose a different value.</div>}
+      {isForbiddenNewBid && (
+        <div
+          className="alt altw"
+          style={{ background: 'var(--red-bg)', color: 'var(--red-text)', borderColor: 'var(--red-text)' }}
+        >
+          This bid is forbidden — choose a different value.
+        </div>
+      )}
       {err && <p className="alt altw">{err}</p>}
 
-      {currentPlayer && (
-        <button className="btnam" onClick={handleConfirm} disabled={submitting || isForbidden}>
-          {submitting ? 'Confirming…' : `Confirm ${currentPlayer.username}'s bid: ${bidVal} →`}
+      {activePlayer && (
+        <button
+          className="btnam"
+          onClick={handleConfirm}
+          disabled={submitting || isForbiddenNewBid}
+        >
+          {submitting
+            ? (isEditing ? 'Updating…' : 'Confirming…')
+            : isEditing
+              ? `Update ${activePlayer.username}'s bid: ${bidVal}`
+              : `Confirm ${activePlayer.username}'s bid: ${bidVal} →`}
         </button>
       )}
     </>
@@ -879,7 +932,7 @@ function TrickEntryView({ game, round, refresh }) {
   const [tricks, setTricks] = useState(() =>
     Object.fromEntries(seats.map(s => [s, bidsBySeat[s] ?? 0]))
   )
-  const [expanded, setExpanded] = useState(null)
+  const [activeSeat, setActiveSeat] = useState(null)
   const [touched, setTouched] = useState(() => new Set())
   const [submitting, setSubmitting] = useState(false)
   const [err, setErr] = useState('')
@@ -894,11 +947,20 @@ function TrickEntryView({ game, round, refresh }) {
   const effectiveTricks = { ...tricks, [lastSeat]: autoLast }
   const totalTricks = Object.values(effectiveTricks).reduce((a, b) => a + b, 0)
   const valid = totalTricks === round.cards_per_player
+  const activeValue = activeSeat !== null ? (effectiveTricks[activeSeat] ?? 0) : 0
 
-  function setTrick(seat, val) {
-    if (seat === lastSeat) return // last seat is auto-resolved
-    setTricks(tv => ({ ...tv, [seat]: Math.max(0, val) }))
-    setTouched(s => new Set(s).add(seat))
+  function adjustActive(delta) {
+    if (activeSeat === null || activeSeat === lastSeat) return
+    setTricks(tv => ({
+      ...tv,
+      [activeSeat]: Math.max(0, (tv[activeSeat] ?? 0) + delta),
+    }))
+    setTouched(s => new Set(s).add(activeSeat))
+  }
+
+  function handleRowClick(seat) {
+    if (seat === lastSeat) return
+    setActiveSeat(s => (s === seat ? null : seat))
   }
 
   async function handleConfirm() {
@@ -941,48 +1003,36 @@ function TrickEntryView({ game, round, refresh }) {
       </div>
 
       <div className="csect">
-        {seats.map((seat, i) => {
+        {seats.map((seat) => {
           const p = playerBySeat[seat]
           if (!p) return null
           const bid = bidsBySeat[seat] ?? 0
           const t = effectiveTricks[seat] ?? 0
           const isAuto = seat === lastSeat
-          const isOpen = expanded === seat && !isAuto
+          const isActive = activeSeat === seat
           const isDone = isAuto || touched.has(seat)
 
           return (
-            <div key={seat}>
-              <div
-                className="brow"
-                style={{ cursor: isAuto ? 'default' : 'pointer', background: isOpen ? 'var(--accent-bg)' : undefined }}
-                onClick={() => !isAuto && setExpanded(isOpen ? null : seat)}
-              >
-                <div className="seat" style={{ background: isOpen ? 'var(--amber)' : undefined, color: isOpen ? '#fff' : undefined }}>{seat + 1}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {p.username}
-                    {seat === round.dealer_seat && <span style={{ fontSize: 10, color: 'var(--amber-text)' }}>🂠</span>}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                    Bid: {bid} · Tricks: {t}
-                  </div>
-                </div>
-                {isDone
-                  ? <span style={{ fontSize: 16, color: 'var(--accent)', marginRight: 2 }}>✓</span>
-                  : <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{isOpen ? '∧' : '∨'}</span>
-                }
-              </div>
-              {isOpen && (
-                <div style={{ padding: '10px 14px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Tricks won</span>
-                  <div className="stpr">
-                    <button className="sbtn" onClick={() => setTrick(seat, t - 1)}>−</button>
-                    <span className="sval">{t}</span>
-                    <button className="sbtn" onClick={() => setTrick(seat, t + 1)}>+</button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <StepperRow
+              key={seat}
+              seatNumber={seat + 1}
+              name={p.username}
+              isDealer={seat === round.dealer_seat}
+              subtitle={
+                isActive
+                  ? '● Entering tricks'
+                  : `Bid: ${bid} · Tricks: ${t}${isAuto ? ' (auto)' : ''}`
+              }
+              isActive={isActive}
+              stepperValue={activeValue}
+              onDecrement={() => adjustActive(-1)}
+              onIncrement={() => adjustActive(+1)}
+              decrementDisabled={activeValue <= 0}
+              incrementDisabled={false}
+              confirmedIcon={!isActive && isDone ? '✓' : null}
+              clickable={!isAuto}
+              onClick={() => handleRowClick(seat)}
+            />
           )
         })}
       </div>

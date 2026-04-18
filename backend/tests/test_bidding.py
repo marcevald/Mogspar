@@ -246,3 +246,88 @@ def test_last_bidder_other_values_still_allowed(client):
     # forbidden is 2, so 0, 1, or 3 are all allowed
     resp = client.post(f"/games/{code}/rounds/1/bid", json={"bid": 3}, headers=bob)
     assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# GM bid — edit semantics
+# Rule: a confirmed bid can be re-entered while no later-ordered player has bid.
+# Once the next player confirms, the prior player's bid locks.
+# ---------------------------------------------------------------------------
+
+def test_gm_bid_edit_allowed_before_next_player_bids(client):
+    """Alice's bid can be corrected while Bob has not yet bid."""
+    code, (alice, bob, carol) = active_game(client, "alice", "bob", "carol")
+    client.post(f"/games/{code}/rounds", json={"cards_per_player": 3}, headers=alice)
+
+    client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 1}, headers=alice)
+    resp = client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 2}, headers=alice)
+    assert resp.status_code == 200
+
+    bids = {b["username"]: b["bid"] for b in resp.json()["bids"]}
+    assert bids == {"alice": 2}
+    assert resp.json()["status"] == "bidding"
+
+
+def test_gm_bid_edit_locked_after_next_player_bids(client):
+    """Once Bob has confirmed, Alice's bid can no longer be edited."""
+    code, (alice, bob, carol) = active_game(client, "alice", "bob", "carol")
+    client.post(f"/games/{code}/rounds", json={"cards_per_player": 3}, headers=alice)
+
+    client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 1}, headers=alice)
+    client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "bob", "bid": 1}, headers=alice)
+    resp = client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 2}, headers=alice)
+    assert resp.status_code == 400
+    assert "locked" in resp.json()["detail"].lower()
+
+
+def test_gm_bid_edit_locks_cascade_in_seat_order(client):
+    """
+    With all three seats having bid in order (A, B, C), only C's bid remains editable
+    — but since C is the last, submitting would have transitioned to 'playing'. Verify
+    that on a 3-player 3-card round, A and B are both locked once C confirms.
+    """
+    code, (alice, bob, carol) = active_game(client, "alice", "bob", "carol")
+    # cards = 4 to avoid forbidden-bid interference
+    client.post(f"/games/{code}/rounds", json={"cards_per_player": 4}, headers=alice)
+
+    client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 1}, headers=alice)
+    # Bob locked A; B still editable.
+    client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "bob", "bid": 1}, headers=alice)
+    # C confirms → round transitions to 'playing'. No edits allowed in playing phase.
+    resp = client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "carol", "bid": 1}, headers=alice)
+    assert resp.json()["status"] == "playing"
+
+    resp = client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "bob", "bid": 2}, headers=alice)
+    assert resp.status_code == 400
+    assert "bidding phase" in resp.json()["detail"].lower()
+
+
+def test_gm_bid_edit_respects_cards_per_player(client):
+    """An edited bid must still respect the cards_per_player cap."""
+    code, (alice, bob) = active_game(client, "alice", "bob")
+    client.post(f"/games/{code}/rounds", json={"cards_per_player": 3}, headers=alice)
+
+    client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 1}, headers=alice)
+    resp = client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 4}, headers=alice)
+    assert resp.status_code == 400
+    assert "cards_per_player" in resp.json()["detail"]
+
+
+def test_gm_bid_edit_preserves_bidding_status(client):
+    """Editing an existing bid must not advance the round to 'playing'."""
+    code, (alice, bob) = active_game(client, "alice", "bob")
+    client.post(f"/games/{code}/rounds", json={"cards_per_player": 3}, headers=alice)
+
+    client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 0}, headers=alice)
+    resp = client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 2}, headers=alice)
+    assert resp.json()["status"] == "bidding"
+    assert len(resp.json()["bids"]) == 1
+
+
+def test_gm_bid_edit_from_non_game_master_rejected(client):
+    """Only the GM can edit bids."""
+    code, (alice, bob) = active_game(client, "alice", "bob")
+    client.post(f"/games/{code}/rounds", json={"cards_per_player": 3}, headers=alice)
+    client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 1}, headers=alice)
+    resp = client.post(f"/games/{code}/rounds/1/gm-bid", json={"username": "alice", "bid": 2}, headers=bob)
+    assert resp.status_code == 403
